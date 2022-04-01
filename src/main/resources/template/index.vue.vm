@@ -1,0 +1,128 @@
+<template>
+    <div class="warp-container mod-role">
+        <el-form :inline="true" :model="dataForm" ref="search_from" @keyup.enter.native="getDataList()"
+                 label-width="80px">
+            <el-row>
+                <el-col :span="21">
+                    <el-form-item label="demo" prop="demo">
+                        <el-input v-model="dataForm.demo" placeholder="demo" clearable></el-input>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button @click="pageIndex = 1;getDataList()" type="primary">
+                            <icon-svg name="search"></icon-svg> {{ $t("common.search") }}
+                        </el-button>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button @click="$refs['searchForm'].resetFields();" type="info">
+                            <icon-svg name="reset"></icon-svg> {{ $t("common.reset") }}
+                        </el-button>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="3" class="expandsearch">
+                    <el-button type="text" @click="expandSearch = !expandSearch">
+                        <icon-svg :name="expandSearch ? 'up' : 'down'" style="vertical-align: middle;"></icon-svg>
+                        <span style="vertical-align: middle;">{{ $t("common.advancedSearch") }}</span>
+                    </el-button>
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="24">
+                    <el-collapse-transition>
+                        <div v-show="expandSearch">
+                            <el-row>
+                                <el-form-item label="demo" prop="demo">
+                                    <el-input v-model="dataForm.demo" placeholder="demo" clearable></el-input>
+                                </el-form-item>
+                            </el-row>
+                        </div>
+                    </el-collapse-transition>
+                </el-col>
+            </el-row>
+            <el-card :body-style="{height:'auto'}" class="operate-wrap">
+                <el-row>
+                    <el-col :span="16">
+                        <div class="data_selected">
+                            <icon-svg name="tip"></icon-svg>
+                            <span class="selectOpBox">{{ $t("common.haveChosen") }}</span>
+                            <span class="selectOpBox_number">{{ dataListSelections.length }}</span>
+                            <span class="selectOpBox">{{ $t("common.row") }}</span>
+                        </div>
+                        <span style="margin-left: 30px">
+                          <el-button v-if="isAuth('${moduleName}:${pathName}:delete')" :type="dataListSelections.length == 0 ?'primary' : 'danger'" plain :disabled="dataListSelections.length == 0"
+                                     @click="deleteHandle('','${moduleName}/${pathName}')"><icon-svg name="del"></icon-svg> {{ $t("common.delete") }}
+                          </el-button>
+                        </span>
+                    </el-col>
+                    <el-col :span="8" style="text-align:right;">
+                        <el-form-item>
+                            <el-button v-if="isAuth('${moduleName}:${pathName}:save')" type="primary" @click="addOrUpdateHandle()">
+                                <icon-svg name="add" ></icon-svg> {{ $t("common.add") }}
+                            </el-button>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="info" @click="getDataList" plain>
+                                <icon-svg name="refresh"></icon-svg> {{ $t("common.refresh") }}
+                            </el-button>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+            </el-card>
+        </el-form>
+        <el-table ref="dataTable" :data="dataList" border v-loading="dataListLoading" @selection-change="selectionChangeHandle"
+                  style="width: 100%;">
+            <el-table-column type="selection" header-align="center" align="center" width="40">
+            </el-table-column>
+#foreach($column in $columns)
+#if($column.columnName != $pk.columnName)
+            <el-table-column prop="${column.attrname}" header-align="left" align="left" min-width="100" label="${column.comments}"  show-overflow-tooltip>
+            </el-table-column>
+#end
+#end
+            <el-table-column fixed="right" header-align="center" align="center" min-width="150" :label="$t('common.operate')">
+                <template slot-scope="scope">
+                    <el-button v-if="isAuth('${moduleName}:${pathName}:update')" type="warning" size="small"
+                               @click="addOrUpdateHandle(scope.row)">{{ $t("common.modify") }}
+                    </el-button>
+                    <el-button v-if="isAuth('${moduleName}:${pathName}:delete')" type="danger" size="small"
+                               @click="deleteHandle(scope.row.id,'${moduleName}/${pathName}')">{{ $t("common.delete") }}
+                    </el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination @size-change="sizeChangeHandle" @current-change="currentChangeHandle" :current-page="pageIndex"
+                :page-sizes="[10, 20, 50, 100]" :page-size="pageSize" :total="totalPage"
+                layout="total, sizes, prev, pager, next, jumper">
+        </el-pagination>
+
+        <!-- 弹窗, 新增 / 修改 -->
+        <add-or-update v-model="showMoal" ref="addOrUpdate" @refreshDataList="getDataList"></add-or-update>
+    </div>
+</template>
+
+<script>
+    import AddOrUpdate from './add-or-update'
+    import baseMixin from '_cm/mixin/base'
+export default {
+    data() {
+        return {
+            dataForm: {
+                demo: '',
+            }
+        }
+    },
+    mixins: [baseMixin],
+    components: {
+        AddOrUpdate,
+    },
+    methods: {
+        // 获取数据列表
+        getDataList() {
+            this.queryDataList({
+                'page': this.pageIndex,
+                'limit': this.pageSize,
+                'demo': this.dataForm.demo
+        },'${moduleName}/${pathName}')
+        }
+    }
+}
+</script>

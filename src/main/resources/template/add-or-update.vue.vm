@@ -1,0 +1,117 @@
+<template>
+    <modal v-model="isShow" width="800px">
+        <el-form :model="formData" ref="form" label-width="120px" :rules="dataRule">
+            <div>
+                <div class="i-box">
+                    <div class="i-box-title">
+                        <icon-svg name="line"></icon-svg>编辑
+                        <h5>{{ $t("common.tip") }}<span>*</span>{{ $t("common.tippp") }}</h5>
+                    </div>
+                    <div class="i-box-conn">
+                        <el-row>
+                            <el-col :span="12" v-show="false">
+                                <el-form-item prop="id" label="自增ID">
+                                    <el-input v-model="formData.id" placeholder="自增ID"
+                                              clearable></el-input>
+                                </el-form-item>
+                            </el-col>
+#foreach($column in $columns)
+
+#if($column.columnName != $pk.columnName)
+                           <el-col :span="12">
+                              <el-form-item label="${column.comments}" prop="${column.attrname}">
+                                  <el-input v-model="formData.${column.attrname}" placeholder="${column.comments}"></el-input>
+                              </el-form-item>
+                           </el-col>
+#end
+#end
+                        </el-row>
+                    </div>
+                </div>
+            </div>
+        </el-form>
+        <div slot="footer">
+            <el-button type="info" @click="isShow = false;">{{ $t('common.cancel') }}</el-button>
+            <el-button type="success" @click="formDataSubmit()" :loading="isLoading" >{{ $t('common.complete') }}</el-button>
+        </div>
+
+    </modal>
+</template>
+<script>
+import addOrUpdate from '_cm/mixin/add-or-update'
+import {saveOrUpdate} from "@/api/common"
+export default {
+    data() {
+        return {
+            formData: {
+#foreach($column in $columns)
+#if($column.columnName == $pk.columnName)
+              ${column.attrname}: '',
+#else
+              ${column.attrname}: ''#if($velocityCount != $columns.size()),#end
+
+#end
+#end
+            },
+            dataRule: {
+#foreach($column in $columns)
+#if($column.columnName != $pk.columnName)
+              ${column.attrname}: [
+              { required: true, message: '${column.comments}不能为空', trigger: 'blur' }
+              ]#if($velocityCount != $columns.size()),#end
+
+#end
+#end
+            }
+        };
+    },
+    mixins: [addOrUpdate],
+    methods: {
+        init(row){
+            if(row){
+#foreach($column in $columns)
+          #[[this.formData.]]#${column.attrname} = #[[row.]]#${column.attrname};
+#end
+            }else{
+                this.formData.id = undefined
+                this.$refs['form'].resetFields()
+            }
+        },
+        formDataSubmit() {
+            #[[this.$refs["form"].validate(valid => {]]#
+                if (valid) {
+                    this.isLoading = true
+                #[[saveOrUpdate({]]#
+#foreach($column in $columns)
+ #if($column.columnName == $pk.columnName)
+                 '${column.attrname}': this.formData.${column.attrname} || undefined,
+ #else
+                '${column.attrname}': this.formData.${column.attrname}#if($velocityCount != $columns.size()),#end
+
+ #end
+#end
+                },'${moduleName}/${pathName}').then(({data}) => {
+                    if (data && data.code === 200) {
+                        this.$message({
+                            message: this.$t('common.successTip'),
+                            type: 'success',
+                            duration: 1500,
+                            onClose: () => {
+                                this.isShow = false
+                                this.isLoading = false
+                                this.$emit('refreshDataList')
+                            }
+                        })
+                    }
+                    }).catch(errMsg => {
+                        this.$message.error(errMsg)
+                        this.isLoading = false
+                    })
+                }
+            })
+        }
+    }
+}
+</script>
+<style lang="scss">
+</style>

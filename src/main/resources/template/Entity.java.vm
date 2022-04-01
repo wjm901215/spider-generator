@@ -1,0 +1,46 @@
+package ${package}.${moduleName}.entity;
+
+
+import com.baomidou.mybatisplus.annotations.TableId;
+#if(${pkHasLong})
+import com.baomidou.mybatisplus.enums.IdType;
+#end
+import com.baomidou.mybatisplus.annotations.TableName;
+import lombok.Data;
+
+#if(${hasBigDecimal})
+import java.math.BigDecimal;
+#end
+import java.io.Serializable;
+#if(${datetime})
+import java.time.LocalDateTime;
+#end
+
+
+/**
+ * ${comments}
+ * 
+ * @author ${author}
+ * @email ${email}
+ * @date ${datetime}
+ */
+@TableName("${tableName}")
+@Data
+public class ${className}Entity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+#foreach ($column in $columns)
+	/**
+	 * $column.comments
+	 */
+#if($column.columnName == $pk.columnName)
+#if($column.attrType == 'Long')
+    @TableId(type = IdType.ID_WORKER)
+#else
+    @TableId
+#end
+#end
+    private $column.attrType $column.attrname;
+#end
+
+}
